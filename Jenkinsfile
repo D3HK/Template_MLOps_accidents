@@ -5,7 +5,7 @@ pipeline {
         stage('Checkout') {
             steps {
                 checkout([$class: 'GitSCM',
-                branches: [[name: '*/main']],
+                branches: [[name: '*/master']],
                 extensions: [],
                 userRemoteConfigs: [[url: 'https://github.com/D3HK/Template_MLOps_accidents']]])
             }
