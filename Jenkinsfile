@@ -32,7 +32,7 @@ pipeline {
 
         stage('Archive') {
             steps {
-                archiveArtifacts artifacts: 'models/*.pkl', fingerprint: true
+                archiveArtifacts artifacts: 'src/models/*.joblib', fingerprint: true
             }
         }
     }
