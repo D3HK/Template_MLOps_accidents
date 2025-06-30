@@ -19,9 +19,9 @@ pipeline {
                     python3 -m venv venv
                     . venv/bin/activate
                     pip install --upgrade pip
-                    # Устанавливаем совместимые версии evidently и pydantic
-                    pip install pydantic==1.10.13
-                    pip install evidently==0.3.2  # Версия, которая точно работает с pydantic<2
+                    # Устанавливаем последнюю стабильную версию evidently с поддержкой pydantic v2
+                    pip install evidently==0.4.11
+                    pip install pydantic==2.6.4
                     pip install -r requirements.txt
                 '''
             }
@@ -49,8 +49,8 @@ pipeline {
                         sh '''
                             . venv/bin/activate
                             mkdir -p reports
-                            # Проверяем доступность модулей
-                            python -c "from evidently.dashboard import Dashboard; from evidently.tabs import DataDriftTab; print('Evidently modules available')"
+                            # Проверяем доступность evidently
+                            python -c "import evidently; from evidently.test_suite import TestSuite; from evidently.tests import TestNumberOfDriftedFeatures; print('Evidently successfully imported')"
                             # Запускаем скрипт обнаружения дрейфа
                             python drift_detection.py || echo "Drift detection completed with warnings"
                         '''
