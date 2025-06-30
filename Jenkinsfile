@@ -44,7 +44,7 @@ pipeline {
                     try {
                         sh '''
                         . venv/bin/activate  # Активируем виртуальное окружение
-                        python src/monitoring/drift_detection.py
+                        python drift_detection.py
                         '''
                         // Если скрипт выполнился успешно - сохраняем отчет
                         archiveArtifacts artifacts: 'reports/drift_report.html, reports/drift_metrics.json'
