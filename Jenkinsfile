@@ -4,10 +4,12 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                checkout([$class: 'GitSCM',
-                branches: [[name: '*/master']],
-                extensions: [],
-                userRemoteConfigs: [[url: 'https://github.com/D3HK/Template_MLOps_accidents']]])
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: '*/master']],
+                    extensions: [],
+                    userRemoteConfigs: [[url: 'https://github.com/D3HK/Template_MLOps_accidents.git']]
+                ])
             }
         }
 
@@ -38,9 +40,30 @@ pipeline {
 
         stage('Drift Detection') {
             steps {
-        sh 'python drift_detection.py'
-        archiveArtifacts 'reports/drift_report.html'
+                script {
+                    try {
+                        sh '''
+                        . venv/bin/activate  # Активируем виртуальное окружение
+                        python src/monitoring/drift_detection.py
+                        '''
+                        // Если скрипт выполнился успешно - сохраняем отчет
+                        archiveArtifacts artifacts: 'reports/drift_report.html, reports/drift_metrics.json'
+                    } catch(e) {
+                        // При обнаружении дрейфа отправляем уведомление
+                        emailext body: "Data drift detected!\n${e}", 
+                                 subject: "DRIFT ALERT: ${env.JOB_NAME}", 
+                                 to: 'your-email@example.com'
+                        error "Data drift detected"  // Падаем на этом этапе
+                    }
+                }
             }
+        }
+    }
+
+    post {
+        always {
+            // Всегда сохраняем артефакты, даже при ошибке
+            archiveArtifacts artifacts: 'reports/**/*'
         }
     }
 }
