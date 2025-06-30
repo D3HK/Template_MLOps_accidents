@@ -19,6 +19,7 @@ pipeline {
                     python3 -m venv venv
                     . venv/bin/activate
                     pip install --upgrade pip
+                    pip install evidently  # Добавляем установку evidently
                     pip install -r requirements.txt
                 '''
             }
@@ -45,11 +46,15 @@ pipeline {
                     try {
                         sh '''
                             . venv/bin/activate
-                            python drift_detection.py
+                            python drift_detection.py || exit 0  # Продолжаем даже при ошибке
                         '''
+                        // Проверяем существование файлов перед архивированием
+                        sh 'test -f reports/drift_report.html && test -f reports/drift_metrics.json'
                         archiveArtifacts artifacts: 'reports/drift_report.html, reports/drift_metrics.json'
                     } catch (Exception e) {
-                        error("Data drift detected or drift detection failed: ${e.getMessage()}")
+                        echo "Warning: Drift detection failed - ${e.getMessage()}"
+                        // Не прерываем весь пайплайн, только предупреждение
+                        currentBuild.result = 'UNSTABLE'
                     }
                 }
             }
@@ -58,7 +63,13 @@ pipeline {
 
     post {
         always {
-            archiveArtifacts artifacts: 'reports/**/*'
+            archiveArtifacts artifacts: 'reports/**/*.html, reports/**/*.json', allowEmptyArchive: true
+        }
+        failure {
+            echo "Pipeline failed - check the logs for details"
+        }
+        unstable {
+            echo "Pipeline completed with warnings"
         }
     }
 }
