@@ -1,18 +1,17 @@
-# local package
--e .
-
-# external requirements
 click
 Sphinx
 coverage
-#awscli>=1.29.0
 flake8
 pandas
-#logging
-numpy 
-pathlib 
+numpy
+pathlib
 scikit-learn
 imbalanced-learn
 joblib
-#sys
-#json
+fastapi
+uvicorn
+prometheus_client
+pydantic
+mlflow>=2.0
+pytest
+evidently
