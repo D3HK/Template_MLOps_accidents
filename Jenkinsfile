@@ -40,5 +40,7 @@ pipeline {
             steps {
         sh 'python drift_detection.py'
         archiveArtifacts 'reports/drift_report.html'
+            }
+        }
     }
 }
