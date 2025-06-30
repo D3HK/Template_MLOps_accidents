@@ -35,5 +35,10 @@ pipeline {
                 archiveArtifacts artifacts: 'src/models/*.joblib', fingerprint: true
             }
         }
+
+        stage('Drift Detection') {
+            steps {
+        sh 'python drift_detection.py'
+        archiveArtifacts 'reports/drift_report.html'
     }
 }
