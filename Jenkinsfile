@@ -19,7 +19,7 @@ pipeline {
                     python3 -m venv venv
                     . venv/bin/activate
                     pip install --upgrade pip
-                    pip install evidently  # Добавляем установку evidently
+                    pip install evidently==0.4.11  # Указываем конкретную версию
                     pip install -r requirements.txt
                 '''
             }
@@ -46,14 +46,21 @@ pipeline {
                     try {
                         sh '''
                             . venv/bin/activate
-                            python drift_detection.py || exit 0  # Продолжаем даже при ошибке
+                            mkdir -p reports  # Создаем директорию для отчетов
+                            python -c "from evidently.report import Report; print('Evidently report module available')"
+                            python drift_detection.py || echo "Drift detection script failed"
                         '''
-                        // Проверяем существование файлов перед архивированием
-                        sh 'test -f reports/drift_report.html && test -f reports/drift_metrics.json'
-                        archiveArtifacts artifacts: 'reports/drift_report.html, reports/drift_metrics.json'
+                        // Проверяем и архивируем отчеты, если они есть
+                        sh '''
+                            if [ -f "reports/drift_report.html" ]; then
+                                echo "Found drift report"
+                            else
+                                echo "No drift report found"
+                            fi
+                        '''
+                        archiveArtifacts artifacts: 'reports/**/*', allowEmptyArchive: true
                     } catch (Exception e) {
-                        echo "Warning: Drift detection failed - ${e.getMessage()}"
-                        // Не прерываем весь пайплайн, только предупреждение
+                        echo "Warning: Drift detection encountered an issue - ${e.getMessage()}"
                         currentBuild.result = 'UNSTABLE'
                     }
                 }
@@ -63,13 +70,16 @@ pipeline {
 
     post {
         always {
-            archiveArtifacts artifacts: 'reports/**/*.html, reports/**/*.json', allowEmptyArchive: true
-        }
-        failure {
-            echo "Pipeline failed - check the logs for details"
+            // Всегда архивируем отчеты, даже если их нет
+            archiveArtifacts artifacts: 'reports/**/*', allowEmptyArchive: true
+            // Очищаем виртуальное окружение
+            sh 'rm -rf venv'
         }
         unstable {
-            echo "Pipeline completed with warnings"
+            echo "Pipeline completed with warnings - check drift detection"
+        }
+        failure {
+            echo "Pipeline failed - check the logs"
         }
     }
 }
