@@ -18,6 +18,7 @@ pipeline {
                 sh '''
                     python3 -m venv venv
                     . venv/bin/activate
+                    pip install --upgrade pip
                     pip install -r requirements.txt
                 '''
             }
@@ -32,7 +33,7 @@ pipeline {
             }
         }
 
-        stage('Archive') {
+        stage('Archive Model') {
             steps {
                 archiveArtifacts artifacts: 'src/models/*.joblib', fingerprint: true
             }
@@ -43,17 +44,12 @@ pipeline {
                 script {
                     try {
                         sh '''
-                        . venv/bin/activate  # Активируем виртуальное окружение
-                        python drift_detection.py
+                            . venv/bin/activate
+                            python drift_detection.py
                         '''
-                        // Если скрипт выполнился успешно - сохраняем отчет
                         archiveArtifacts artifacts: 'reports/drift_report.html, reports/drift_metrics.json'
-                    } catch(e) {
-                        // При обнаружении дрейфа отправляем уведомление
-                        emailext body: "Data drift detected!\n${e}", 
-                                 subject: "DRIFT ALERT: ${env.JOB_NAME}", 
-                                 to: 'your-email@example.com'
-                        error "Data drift detected"  // Падаем на этом этапе
+                    } catch (Exception e) {
+                        error("Data drift detected or drift detection failed: ${e.getMessage()}")
                     }
                 }
             }
@@ -62,7 +58,6 @@ pipeline {
 
     post {
         always {
-            // Всегда сохраняем артефакты, даже при ошибке
             archiveArtifacts artifacts: 'reports/**/*'
         }
     }
