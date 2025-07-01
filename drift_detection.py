@@ -2,16 +2,16 @@ import pandas as pd
 from evidently.report import Report
 from evidently.metrics import DataDriftTable
 
-# Загрузка данных из вашей структуры
+# Загрузка данных
 reference_data = pd.read_csv("data/preprocessed/X_train.csv")  # Эталон
 current_data = pd.read_csv("data/preprocessed/X_test.csv")      # Текущие данные
 
-# Проверка дрейда
+# Проверка дрейфа
 report = Report(metrics=[DataDriftTable()])
 report.run(
     current_data=current_data,
     reference_data=reference_data,
-    column_mapping=None  # Автоопределение фичей
+    column_mapping=None 
 )
 
 # Сохранение отчета в папку reports
