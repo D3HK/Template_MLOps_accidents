@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose.yml -o k8s/
+    kompose.version: 1.32.0 (765fde254)
+  labels:
+    io.kompose.service: node-exporter
+  name: node-exporter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: node-exporter
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -f docker-compose.yml -o k8s/
+        kompose.version: 1.32.0 (765fde254)
+      labels:
+        io.kompose.network/template-mlops-accidents-default: "true"
+        io.kompose.service: node-exporter
+    spec:
+      containers:
+        - args:
+            - --path.procfs=/host/proc
+            - --path.sysfs=/host/sys
+            - --path.rootfs=/rootfs
+          image: prom/node-exporter:latest
+          name: node-exporter
+          ports:
+            - containerPort: 9100
+              hostPort: 9100
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /host/proc
+              name: node-exporter-claim0
+              readOnly: true
+            - mountPath: /host/sys
+              name: node-exporter-claim1
+              readOnly: true
+            - mountPath: /rootfs
+              name: node-exporter-claim2
+              readOnly: true
+      restartPolicy: Always
+      volumes:
+        - name: node-exporter-claim0
+          persistentVolumeClaim:
+            claimName: node-exporter-claim0
+            readOnly: true
+        - name: node-exporter-claim1
+          persistentVolumeClaim:
+            claimName: node-exporter-claim1
+            readOnly: true
+        - name: node-exporter-claim2
+          persistentVolumeClaim:
+            claimName: node-exporter-claim2
+            readOnly: true
